@@ -22,7 +22,7 @@ class WitConversation:
     _state = None
     _personList = ['寶弟','暄暄']
     _responseMsg = ""
-    _musicName = ""
+    _musicName = "外婆的澎湖灣"
 
     def __init__(self):
         self.access_token='3Y2PWQBZDNOXGIRR46CNAOYBQJ5GYN3C'
@@ -44,6 +44,7 @@ class WitConversation:
 
     def __send(self,request, response):
         self._responseMsg = str(response['text'])
+        print self._responseMsg
 
     def __sayHello(self,request):
         context = request['context']
@@ -63,7 +64,7 @@ class WitConversation:
             del context['misunderstand']
         try:
             person = self.__first_entity_value(entities,'name')
-            print type(person),person
+            # print type(person),person
             if person.encode('utf8') in person_list:
                 context['correct'] = person
             else:
@@ -84,6 +85,7 @@ class WitConversation:
                 context['wrong'] = correct_music_name
         except:
             context['wrong'] = correct_music_name
+        return context
 
     def sendMsg(self,text):
         global session_id
@@ -140,4 +142,10 @@ class WitConversation:
 
 if __name__ == '__main__':
     c = WitConversation()
-    c.postVideo()
+    c.sendMsg('早安');
+    c.sendMsg('聽歌');
+    c.sendMsg('外婆的澎湖灣吧');
+    c.sendMsg('我忘記了');
+    c.sendMsg('好啊 好懷念喔');
+    c.sendMsg('是寶弟吧');
+    c.sendMsg('不知道');   
