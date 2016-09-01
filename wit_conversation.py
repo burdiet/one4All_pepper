@@ -1,5 +1,7 @@
 #coding=utf-8
 import sys
+import wit
+reload(wit)
 from wit import Wit
 import uuid
 import json
@@ -18,9 +20,9 @@ def req(meth,path):
     return json
     
 class WitConversation:
-    _intent_state = {"say_hello":0,"watch_album":1,"person":2,"listen_music":3,"confuse":4}
+    _intent_state = {"say_hello":0,"watch_album":1,"person":2,"listen_music":3,"confuse":4, "agree": 5, "answer_music": 6}
     _state = None
-    _personList = ['寶弟','暄暄']
+    _personList = ["寶弟"]
     _responseMsg = ""
     _musicName = "外婆的澎湖灣"
 
@@ -31,6 +33,7 @@ class WitConversation:
         'sayHello': self.__sayHello,
         'getPerson': self.__getPerson,
         'checkMusic': self.__checkMusic,
+        'getState': self.__getState
         }
         self.client = Wit(access_token=self.access_token, actions=self.actions)
 
@@ -45,6 +48,20 @@ class WitConversation:
     def __send(self,request, response):
         self._responseMsg = str(response['text'])
         print self._responseMsg
+        
+    def __getState(self, request):
+        if 'entities' in request:
+            entities = request['entities']
+            print entities
+            if 'intent' in entities:
+                print entities['intent'][0]
+                self._state = self.__first_entity_value(entities, 'intent')
+                print self._state
+                print self._intent_state[self._state]
+            else:
+                self._state = "confuse"
+        else:
+            self._state = "confuse"
 
     def __sayHello(self,request):
         context = request['context']
@@ -88,6 +105,8 @@ class WitConversation:
         return context
 
     def sendMsg(self,text):
+        print text
+        self._state = None
         global session_id
         if session_id is None:
             session_id = uuid.uuid1()
@@ -97,6 +116,7 @@ class WitConversation:
         self._personList = new_list
 
     def getResponseMsg(self):
+        print self._responseMsg
         return self._responseMsg
 
     def getResponseState(self):
@@ -105,15 +125,18 @@ class WitConversation:
     def getPhotoQuestion(self):
         url = 'photo/question'
         resp = req('GET',url)
-        self._personList.append(resp['data'][0]['name'].encode('utf-8'))
-        img_url = resp['data'][0]['img'].encode('utf-8')
+        self._personList.append(json.dumps(resp['data']['name'],ensure_ascii=False).encode('utf-8'))
+        img_url = resp['data']['img'].encode('utf-8')
+        print img_url,self._personList
         return img_url
 
     def getSongQuestion(self):
         url = 'song/question'
         resp = req('GET',url)
-        self._musicName =  resp['data'][0][''].encode('utf-8')
-        return name
+        self._musicName =  json.dumps(resp['data']['name'],ensure_ascii=False).encode('utf-8')
+        video_key = resp['data']['videoKey'].encode('utf-8')
+        video_url = 'https://www.youtube.com/watch?v=' + video_key
+        return video_url
 
     def postSound(self,input):
         url = 'https://api.wit.ai/speech?v=20160526'
@@ -135,17 +158,20 @@ class WitConversation:
             return '我聽不太懂，你可以再說一遍嗎？我還在學習中'
 
     def postVideo(self):
-        url = 'http://192.168.31.211:3030/upload'
-        files = {'file': open('recording_video.avi', 'rb')}
+        url = 'http://www.anyong.biz/pepper/upload'
+        files = {'files': open('recording_video.avi', 'rb')}
         r = requests.post(url, files=files)
-        print r 
+        print r
 
 if __name__ == '__main__':
     c = WitConversation()
-    c.sendMsg('早安');
-    c.sendMsg('聽歌');
-    c.sendMsg('外婆的澎湖灣吧');
-    c.sendMsg('我忘記了');
-    c.sendMsg('好啊 好懷念喔');
-    c.sendMsg('是寶弟吧');
-    c.sendMsg('不知道');   
+    c.sendMsg('早安')
+    c.sendMsg('好啊')
+    c.sendMsg('是外婆的澎湖灣呀')
+    c.sendMsg('是外婆的澎湖灣呀')
+    c.sendMsg('是外婆的澎湖灣呀')
+    c.sendMsg('這我忘記了')
+    c.sendMsg('好啊 好懷念啊')
+    c.sendMsg('這寶弟啊')
+    c.sendMsg('我忘記了')
+
